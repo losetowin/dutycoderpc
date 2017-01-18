@@ -1,4 +1,4 @@
-package com.dutycode.rpc.server.contract;
+package com.dutycode.rpc.server.contract.server;
 
 public interface IServer {
 
