@@ -51,7 +51,7 @@ public class SocketServer implements IServer {
 		
 		
 		SocketHandler sockerHandler = new SocketHandler();
-		serverBootstrap.
+//		serverBootstrap.
 
 	}
 
