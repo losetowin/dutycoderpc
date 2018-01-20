@@ -70,7 +70,7 @@ public class ServerConfig {
 		
 	}
 	
-	private void set(String key , String val){
+	public void set(String key , String val){
 		propertyMap.put(key, val);
 	}
 	public int getInt(String key){
