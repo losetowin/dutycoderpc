@@ -1,5 +1,6 @@
 package com.dutycode.rpc.server.core.deploy.classloader;
 
+import com.dutycode.rpc.server.utils.FileHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -51,6 +52,8 @@ public class DynamicClassLoader extends SecureClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
+
+
         return super.findClass(name);
     }
 
@@ -64,7 +67,7 @@ public class DynamicClassLoader extends SecureClassLoader {
      * @return
      */
     public Class<?> findClass(String jarpath, String className, boolean fromCache) {
-        logger.info(String.format("find class from jar: jarpath=%s,className=%s,fromcache=%s", jarpath, className, fromCache);
+        logger.info(String.format("find class from jar: jarpath=%s,className=%s,fromcache=%s", jarpath, className, fromCache));
 
         //检查是否从缓存中获取
         if (fromCache && classCache.containsKey(className)) {
@@ -96,8 +99,6 @@ public class DynamicClassLoader extends SecureClassLoader {
         }
 
         return findClass(className, clsBytes, url);
-
-        return null;
     }
 
 
@@ -171,5 +172,36 @@ public class DynamicClassLoader extends SecureClassLoader {
         return null;
 
     }
+
+
+    public void addURL(String jarUrl){
+        if (StringUtils.isNotBlank(jarUrl) && !jarList.contains(jarUrl)){
+            jarList.add(jarUrl);
+        }
+    }
+
+    public void addURLs(List<String> urls){
+        if (urls != null && urls.size() > 0){
+            jarList.addAll(urls);
+        }
+    }
+
+    /**
+     * 添加jar包所在的文件夹路径
+     * @param folders
+     */
+    public void addFolder(String... folders){
+
+        for (String folder : folders){
+            try {
+                List<String> jarList = FileHelper.getLibPath(folder);
+                addURLs(jarList);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
 
 }
