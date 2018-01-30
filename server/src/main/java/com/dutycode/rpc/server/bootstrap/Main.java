@@ -3,6 +3,7 @@ package com.dutycode.rpc.server.bootstrap;
 import com.dutycode.rpc.server.contract.context.Global;
 import com.dutycode.rpc.server.contract.context.GlobalConstant;
 import com.dutycode.rpc.server.contract.context.ServerConfig;
+import com.dutycode.rpc.server.core.deploy.classloader.DynamicClassLoader;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -18,8 +19,8 @@ import java.util.Set;
  * 3.启动主socketserver
  * 4.注册关闭信号,平滑关闭系统
  * 5.注册心跳,增加心跳机制
- *
- *
+ * <p>
+ * <p>
  * 说明:
  * 日志目前仅有log4j,未支持其他日志组件,后续可统一出口,使用sl4j做统一出口
  *
@@ -31,6 +32,7 @@ public class Main {
 
 
     private static Logger logger = null;
+
     /**
      * 输入参数说明:
      * -Drpc.service.name=xxx服务名称
@@ -81,13 +83,26 @@ public class Main {
 
         //将jvm参数中的数据,写入到ServerConfig中
         Set<String> keySet = argsMap.keySet();
-        for (String key : keySet){
+        for (String key : keySet) {
             serverConfig.set(key, argsMap.get(key));
         }
 
 
+        //初始化类加载器,加载数据到缓存中
+        DynamicClassLoader dcl = new DynamicClassLoader();
+        //只加载/opt/rpc/service/deploy/xxxx/lib/和/opt/rpc/service/deploy/xxxx/下的jar包
+        dcl.addFolder(GlobalConstant.BASE_RPC_SERVICE_PATH + serviceName + "/lib/",
+                GlobalConstant.BASE_RPC_SERVICE_PATH + serviceName);
+
+        //TODO 加载初始化的接口类,之后加
+
+        //加载服务接口实现,提供代理,使用javasisit
 
 
+        //TODO 加载结束的接口类,之后加
+
+
+        //启动服务和接口
 
     }
 
@@ -102,9 +117,9 @@ public class Main {
         String log4jpath = GlobalConstant.BASE_RPC_SERVICE_PATH + serviceName + "/log4j.properties";
 
         File f = new File(log4jpath);
-        if (f.exists()){
+        if (f.exists()) {
             PropertyConfigurator.configure(log4jpath);
-        }else {
+        } else {
             //使用默认的log4j配置文件, 默认在GlobalConstant.BASE_RPC_PATH + "/conf/log4j.properties"
             String defaultLog4jpath = GlobalConstant.RPC_BASE_PATH + "/conf/log4j.properties";
             PropertyConfigurator.configure(defaultLog4jpath);

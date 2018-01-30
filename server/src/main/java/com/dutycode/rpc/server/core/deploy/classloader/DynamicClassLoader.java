@@ -11,10 +11,7 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -52,9 +49,7 @@ public class DynamicClassLoader extends SecureClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-
-
-        return super.findClass(name);
+        return this.findClass("",name, true);
     }
 
 
@@ -75,10 +70,11 @@ public class DynamicClassLoader extends SecureClassLoader {
         }
 
 
-        //class的具体路径
+        //class的具体路径,因为在addFolder的时候,会将所有jar包都加入到缓存中, 理论上不会走到这里. 下面的代码,防止直接调用时获取到. 补充用.
+        //另外:在不使用缓存的时候,也会读到下面的代码
         String classPath = className.replace(".", "/").concat(".class");
         byte[] clsBytes = null;
-        if (StringUtils.isNotBlank(jarpath)) {
+        if (StringUtils.isBlank(jarpath)) {
             //如果传入的jarpath为空,则从所有的jar包中扫描.
             for (String tmpjarpath : jarList) {
                 clsBytes = getClassBytes(tmpjarpath, classPath);
@@ -174,15 +170,55 @@ public class DynamicClassLoader extends SecureClassLoader {
     }
 
 
+    /**
+     * 读取jar包,将jar包中的class加载并放到缓存中,一次性加载,减少每次findClass时连续获取
+     * @param jarUrl
+     */
+    public void addClassCache(String jarUrl){
+        JarFile jarFile = null;
+        InputStream input = null;
+        try {
+            jarFile = new JarFile(jarUrl);
+            //获取jar包下所有的class对象
+            Enumeration<JarEntry> jarEnties = jarFile.entries();
+            while (jarEnties.hasMoreElements()){
+                JarEntry entity = jarEnties.nextElement();
+                //获取classNmae
+                String className = entity.getName();
+                input = jarFile.getInputStream(entity);
+                byte[] classBytes = new byte[input.available()];
+                input.read(classBytes);
+
+                URL url = null;
+                try {
+                    url = new URL("file", "", jarUrl);
+                }catch (Exception e){
+                    logger.error("get jar file url err", e);
+                }
+                //获取class.并添加到cache中.
+                this.findClass(className, classBytes,url);
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
     public void addURL(String jarUrl){
         if (StringUtils.isNotBlank(jarUrl) && !jarList.contains(jarUrl)){
             jarList.add(jarUrl);
+            //添加到缓存
+            this.addClassCache(jarUrl);
         }
     }
 
     public void addURLs(List<String> urls){
         if (urls != null && urls.size() > 0){
-            jarList.addAll(urls);
+            for (String url : urls){
+                this.addURL(url);
+            }
         }
     }
 
